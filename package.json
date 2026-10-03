@@ -1,0 +1,52 @@
+{
+  "name": "assistball",
+  "version": "2.0.0",
+  "description": "AssistBall - an always-on-screen AI assistant that understands your current screen.",
+  "main": "electron/main.js",
+  "author": "AssistBall Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "backend:install": "python -m pip install -r backend/requirements.txt",
+    "backend:test": "python -m pytest backend/tests -q",
+    "backend": "python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000",
+    "build:backend": "powershell -ExecutionPolicy Bypass -File scripts/build-backend.ps1",
+    "build:app": "npm run build:backend && electron-builder",
+    "dist": "electron-builder"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.assistball.desktop",
+    "productName": "AssistBall",
+    "asar": true,
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend-dist",
+        "to": "backend-dist"
+      },
+      {
+        "from": "backend/.env",
+        "to": "backend/.env"
+      }
+    ],
+    "win": {
+      "target": ["nsis"],
+      "artifactName": "AssistBall-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

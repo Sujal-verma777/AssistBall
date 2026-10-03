@@ -1,0 +1,13 @@
+node_modules/
+dist/
+release/
+*.log
+.env
+backend/.env
+backend/venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+Thumbs.db

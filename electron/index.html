@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AssistBall</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="ballView" class="ball-view">
+    <button id="ballButton" class="assist-ball" aria-label="Open AssistBall">
+      <span class="ball-highlight"></span>
+      <span class="ball-face">
+        <span class="eye eye-left"></span>
+        <span class="eye eye-right"></span>
+        <span class="nose"></span>
+      </span>
+    </button>
+  </div>
+
+  <div id="chatView" class="chat-window hidden">
+    <div class="titlebar">
+      <div class="brand">
+        <div class="mini-ball"></div>
+        <span>AssistBall</span>
+      </div>
+      <div class="window-buttons">
+        <button id="minimizeButton" title="Hide">−</button>
+        <button id="closeButton" title="Close">×</button>
+      </div>
+    </div>
+
+    <div class="chat-body">
+      <div class="status-row">
+        <span class="status-dot"></span>
+        <span id="statusText">Screen captured</span>
+      </div>
+
+      <div id="suggestions" class="suggestions hidden"></div>
+
+      <div id="messages" class="messages">
+        <div class="welcome">
+          <div class="welcome-icon">✦</div>
+          <h2>How can I help?</h2>
+          <p>
+            I captured your screen. Tell me what problem you're facing and
+            I'll help you step-by-step.
+          </p>
+        </div>
+      </div>
+
+      <div class="composer">
+        <textarea
+          id="questionInput"
+          rows="2"
+          placeholder="What problem are you facing?"
+        ></textarea>
+
+        <div class="composer-bottom">
+          <button id="recaptureButton" class="secondary-button" title="Capture screen again">
+            ↻ Capture
+          </button>
+          <button id="sendButton" class="send-button">
+            <span>Send</span>
+            <span class="send-icon">➤</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>

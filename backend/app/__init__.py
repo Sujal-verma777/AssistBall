@@ -1,0 +1,1 @@
+"""AssistBall Backend Application."""
