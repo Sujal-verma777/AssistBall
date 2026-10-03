@@ -3,6 +3,7 @@ dist/
 release/
 *.log
 .env
+!.env.example
 backend/.env
 backend/venv/
 backend/.venv/
