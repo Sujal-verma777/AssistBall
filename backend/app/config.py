@@ -9,11 +9,12 @@ class Settings(BaseSettings):
 
     # Security & Rate Limiting
     APP_API_KEY: str = "assistball-secret-api-key"
+    ASSISTBALL_API_KEY: Optional[str] = None
     ALLOWED_ORIGINS: Union[str, List[str]] = ["*"]
     RATE_LIMIT_PER_MIN: int = 20
 
     # Provider & Model Settings
-    PROVIDER: str = "claude"
+    PROVIDER: str = "mock"
     MODEL_NAME: Optional[str] = None
 
     # Provider API Keys

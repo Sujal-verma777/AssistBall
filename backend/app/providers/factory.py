@@ -35,7 +35,19 @@ def get_provider(
     provider_name: Optional[str] = None,
     model_name: Optional[str] = None,
 ) -> VisionProvider:
-    target_provider = (provider_name or settings.PROVIDER or "mock").lower()
+    configured = (provider_name or settings.PROVIDER or "").strip().lower()
+    if not configured or configured in ("auto", "none"):
+        if settings.GEMINI_API_KEY:
+            target_provider = "gemini"
+        elif settings.ANTHROPIC_API_KEY:
+            target_provider = "claude"
+        elif settings.OPENAI_API_KEY:
+            target_provider = "openai"
+        else:
+            target_provider = "mock"
+    else:
+        target_provider = configured
+
     target_model = model_name or settings.MODEL_NAME
 
     provider_cls = PROVIDER_REGISTRY.get(target_provider)

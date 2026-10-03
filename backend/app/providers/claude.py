@@ -12,7 +12,7 @@ class ClaudeProvider(VisionProvider):
     def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         self.provider_name = "claude"
         self.api_key = api_key or settings.ANTHROPIC_API_KEY
-        self.model_name = model_name or settings.MODEL_NAME or "claude-sonnet-5-5"
+        self.model_name = model_name or settings.MODEL_NAME or "claude-3-7-sonnet-latest"
         if self.api_key:
             self.client = anthropic.AsyncAnthropic(api_key=self.api_key, timeout=30.0)
         else:

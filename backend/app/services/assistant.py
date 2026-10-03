@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 from datetime import datetime, timezone
 from typing import AsyncIterator, Tuple
@@ -232,18 +233,26 @@ async def process_suggest(request: SuggestRequest) -> SuggestResponse:
         )
 
         # Parse JSON output from LLM (strip markdown code blocks if present)
-        cleaned = raw_response.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned.split("```json", 1)[1]
-        if cleaned.startswith("```"):
-            cleaned = cleaned.split("```", 1)[1]
-        if cleaned.endswith("```"):
-            cleaned = cleaned.rsplit("```", 1)[0]
-        cleaned = cleaned.strip()
+        parsed = {}
+        try:
+            cleaned = raw_response.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned.split("```json", 1)[1]
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```", 1)[1]
+            if cleaned.endswith("```"):
+                cleaned = cleaned.rsplit("```", 1)[0]
+            parsed = json.loads(cleaned.strip())
+        except Exception:
+            match = re.search(r"\{[\s\S]*\}", raw_response)
+            if match:
+                try:
+                    parsed = json.loads(match.group(0))
+                except Exception:
+                    pass
 
-        parsed = json.loads(cleaned)
-        suggestions = parsed.get("suggestions", [])
-        detected_app = parsed.get("detected_app", "Active Screen")
+        suggestions = parsed.get("suggestions", []) if isinstance(parsed, dict) else []
+        detected_app = parsed.get("detected_app", "Active Screen") if isinstance(parsed, dict) else "Active Screen"
 
         # Fallback if AI returned empty or invalid suggestion list length
         if not isinstance(suggestions, list) or len(suggestions) < 2:

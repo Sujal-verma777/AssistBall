@@ -45,8 +45,11 @@ rate_limiter = InMemoryRateLimiter()
 
 
 async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")) -> str:
-    """FastAPI dependency to validate X-API-Key header against APP_API_KEY."""
-    if not x_api_key or x_api_key != settings.APP_API_KEY:
+    """FastAPI dependency to validate X-API-Key header against configured application key."""
+    valid_keys = {settings.APP_API_KEY}
+    if settings.ASSISTBALL_API_KEY:
+        valid_keys.add(settings.ASSISTBALL_API_KEY)
+    if not x_api_key or x_api_key not in valid_keys:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key header 'X-API-Key'.",

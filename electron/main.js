@@ -43,7 +43,16 @@ function readDotEnv(filePath) {
 }
 
 function getApiKey() {
-  return process.env.ASSISTBALL_API_KEY || readDotEnv(path.join(getBackendDir(), ".env")).APP_API_KEY || "";
+  const backendEnv = readDotEnv(path.join(getBackendDir(), ".env"));
+  const rootEnv = readDotEnv(path.join(__dirname, "..", ".env"));
+  return (
+    backendEnv.APP_API_KEY ||
+    backendEnv.ASSISTBALL_API_KEY ||
+    process.env.ASSISTBALL_API_KEY ||
+    rootEnv.ASSISTBALL_API_KEY ||
+    rootEnv.APP_API_KEY ||
+    ""
+  );
 }
 
 function commandExists(command) {
@@ -137,8 +146,11 @@ async function waitForBackend(timeoutMs = 15000) {
     try {
       const response = await fetch(`${BACKEND_BASE_URL}/health`);
       if (response.ok) {
-        backendReady = true;
-        return true;
+        const data = await response.json().catch(() => ({}));
+        if (data && data.status === "ok" && data.provider) {
+          backendReady = true;
+          return true;
+        }
       }
     } catch (_) {}
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -177,33 +189,61 @@ async function requestSuggestions(screenshot) {
 }
 
 async function requestAnswer(question, screenshot, history) {
-  return backendRequest("/ask", {
-    query: question,
-    image_b64: screenshot.base64,
-    media_type: screenshot.mime,
-    history: Array.isArray(history) ? history.slice(-10) : [],
-    session_id: `desktop-${process.pid}`,
-  });
+  try {
+    return await backendRequest("/ask", {
+      query: question,
+      image_b64: screenshot.base64,
+      media_type: screenshot.mime,
+      history: Array.isArray(history) ? history.slice(-10) : [],
+      session_id: `desktop-${process.pid}`,
+    });
+  } catch (err) {
+    if (err.message && err.message.toLowerCase().includes("not found")) {
+      return await backendRequest("/analyze", {
+        query: question,
+        image_b64: screenshot.base64,
+        media_type: screenshot.mime,
+        history: Array.isArray(history) ? history.slice(-10) : [],
+        session_id: `desktop-${process.pid}`,
+      });
+    }
+    throw err;
+  }
 }
 
 async function requestAnswerStream(question, screenshot, history, onToken) {
   const ready = backendReady || await waitForBackend();
   if (!ready) throw new Error("AssistBall AI backend did not start.");
 
-  const response = await fetch(`${BACKEND_BASE_URL}/ask/stream`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": getApiKey(),
-    },
-    body: JSON.stringify({
-      query: question,
-      image_b64: screenshot.base64,
-      media_type: screenshot.mime,
-      history: Array.isArray(history) ? history.slice(-10) : [],
-      session_id: `desktop-${process.pid}`,
-    }),
-  });
+  let response;
+  try {
+    response = await fetch(`${BACKEND_BASE_URL}/ask/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": getApiKey(),
+      },
+      body: JSON.stringify({
+        query: question,
+        image_b64: screenshot.base64,
+        media_type: screenshot.mime,
+        history: Array.isArray(history) ? history.slice(-10) : [],
+        session_id: `desktop-${process.pid}`,
+      }),
+    });
+  } catch (err) {
+    throw new Error(`Failed to reach backend: ${err.message}`);
+  }
+
+  // If streaming endpoint is not found, fallback to standard /ask
+  if (response.status === 404) {
+    console.warn("/ask/stream returned 404, falling back to /ask");
+    const fallbackResult = await requestAnswer(question, screenshot, history);
+    if (fallbackResult && fallbackResult.answer) {
+      onToken(fallbackResult.answer);
+      return fallbackResult;
+    }
+  }
 
   if (!response.ok || !response.body) {
     let detail = `Backend returned HTTP ${response.status}`;
